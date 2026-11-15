@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "tsne.h"
 
@@ -90,6 +91,33 @@ static int max_depth(const cell_t *c)
         }
     }
     return d;
+}
+
+
+/* Leaves at the depth limit: they hold points that could not be separated. */
+static void deep_leaves(const cell_t *c, int depth,
+                        int64_t *nleaves, int64_t *npoints, int64_t *maxcount)
+{
+    if (c->leaf) {
+        if (depth >= MAX_DEPTH) {
+            (*nleaves)++;
+            *npoints += c->count;
+            if (c->count > *maxcount)
+                *maxcount = c->count;
+        }
+        return;
+    }
+    for (int q = 0; q < 4; q++)
+        if (c->child[q])
+            deep_leaves(c->child[q], depth + 1, nleaves, npoints, maxcount);
+}
+
+void tree_deep_report(const tree_t *T)
+{
+    int64_t nleaves = 0, npoints = 0, maxcount = 0;
+    deep_leaves(T->root, 0, &nleaves, &npoints, &maxcount);
+    printf("leaves at depth %d: %ld, points in them: %ld, largest: %ld\n",
+           MAX_DEPTH, (long)nleaves, (long)npoints, (long)maxcount);
 }
 
 void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m)

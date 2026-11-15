@@ -52,7 +52,7 @@ int main(int argc, char **argv)
         printf("usage: %s data/<graph> [m]\n", argv[0]);
         return 1;
     }
-    int m = (argc > 2) ? atoi(argv[2]) : 8;   /* leaf capacity */
+        int m = (argc > 2) ? atoi(argv[2]) : 16;  /* leaf capacity (see results/sweep_m.csv) */
 
     graph_t W;
     state_t S;
@@ -114,6 +114,7 @@ int main(int argc, char **argv)
     double t3 = now();
 
         printf("tree (m = %d): %ld cells, max depth %d\n", m, (long)T.ncells, T.maxdepth);
+            tree_deep_report(&T);
     printf("build: %.3f s, com: %.3f s, walk: %.3f s\n", t1 - t0, t2 - t1, t3 - t2);
         double t_bh = t3 - t0;
     printf("Z bh = %.2f (ref %.2f), rel err = %.3e\n", Zbh, R.Z, fabs(Zbh - R.Z) / R.Z);

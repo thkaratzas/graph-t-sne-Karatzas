@@ -33,6 +33,7 @@ double compute_rep_direct_seq(int64_t n, const double *Y, double *F);
 void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m);
 void tree_com_seq(tree_t *T, const double *Y);
 void tree_free(tree_t *T);
+void tree_deep_report(const tree_t *T);
 double compute_rep_bh_seq(const tree_t *T, int64_t n, const double *Y, double theta, double *F);
 
 /* Step 4: gradient G[2n] = 4 (Fattr - Frep) */
