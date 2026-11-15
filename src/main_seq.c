@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include "tsne.h"
 
 static double now(void)
@@ -112,11 +113,19 @@ int main(int argc, char **argv)
     double Zbh = compute_rep_bh_seq(&T, W.n, S.Y0, S.theta, Fbh);
     double t3 = now();
 
-    printf("tree (m = %d): %ld cells\n", m, (long)T.ncells);
+        printf("tree (m = %d): %ld cells, max depth %d\n", m, (long)T.ncells, T.maxdepth);
     printf("build: %.3f s, com: %.3f s, walk: %.3f s\n", t1 - t0, t2 - t1, t3 - t2);
         double t_bh = t3 - t0;
     printf("Z bh = %.2f (ref %.2f), rel err = %.3e\n", Zbh, R.Z, fabs(Zbh - R.Z) / R.Z);
     printf("Frep bh rel err = %.3e\n", rel_err(Fbh, R.Frep, W.n));
+
+    /* one line for scripts: grep "^CSV_BH" */
+    const char *name = strrchr(argv[1], '/');
+    name = (name != NULL) ? name + 1 : argv[1];
+    printf("CSV_BH,%s,%ld,%d,%ld,%d,%.6f,%.6f,%.6f,%.3e,%.3e\n",
+           name, (long)W.n, m, (long)T.ncells, T.maxdepth,
+           t1 - t0, t2 - t1, t3 - t2,
+           fabs(Zbh - R.Z) / R.Z, rel_err(Fbh, R.Frep, W.n));
 
     /* Step 4: gradient */
     double *G    = malloc(2 * W.n * sizeof(double));

@@ -77,6 +77,21 @@ static int64_t count_cells(const cell_t *c)
     return k;
 }
 
+
+/* depth of the deepest leaf below c (c itself at depth 0) */
+static int max_depth(const cell_t *c)
+{
+    int d = 0;
+    for (int q = 0; q < 4; q++) {
+        if (c->child[q]) {
+            int dq = 1 + max_depth(c->child[q]);
+            if (dq > d)
+                d = dq;
+        }
+    }
+    return d;
+}
+
 void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m)
 {
     /* bounding box */
@@ -103,6 +118,7 @@ void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m)
     free(tmp);
 
     T->ncells = count_cells(T->root);
+        T->maxdepth = max_depth(T->root);
 }
 
 /* centers of mass, bottom-up */

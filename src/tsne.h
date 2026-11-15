@@ -18,6 +18,7 @@ typedef struct {
     int64_t *perm;          /* point indices, grouped by cell */
     int      m;             /* leaf capacity */
     int64_t  ncells;
+    int      maxdepth;      /* depth of the deepest leaf (root = 0) */
 } tree_t;
 /* Step 1: beta[n] and P[nnz] (P has the same sparsity as W) */
 void compute_P_seq(const graph_t *W, double u, double *beta, double *P);
