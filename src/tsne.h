@@ -58,6 +58,15 @@ void   tree_build_omp(tree_t *T, int64_t n, const double *Y, int m);
 void   tree_com_omp(tree_t *T, const double *Y);
 double compute_rep_bh_omp(const tree_t *T, int64_t n, const double *Y, double theta, double *F);
 void   compute_grad_omp(int64_t n, const double *Fattr, const double *Frep, double *G);
+
+/* OpenCilk versions (*_cilk.c), same arguments */
+void   compute_P_cilk(const graph_t *W, double u, double *beta, double *P);
+void   compute_attr_cilk(const graph_t *W, const double *P, const double *Y, double *F);
+double compute_rep_direct_cilk(int64_t n, const double *Y, double *F);
+void   tree_build_cilk(tree_t *T, int64_t n, const double *Y, int m);
+void   tree_com_cilk(tree_t *T, const double *Y);
+double compute_rep_bh_cilk(const tree_t *T, int64_t n, const double *Y, double theta, double *F);
+void   compute_grad_cilk(int64_t n, const double *Fattr, const double *Frep, double *G);
 /* helpers (p_common.c) */
 double row_beta(const double *w, int64_t d, double u, double *p, double *lr);
 int64_t find_entry(const graph_t *W, int64_t j, int64_t i);
