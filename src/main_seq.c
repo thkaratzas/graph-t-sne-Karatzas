@@ -97,7 +97,23 @@ int main(int argc, char **argv)
     printf("attr: %.3f s\n", t1 - t0);
     printf("Fattr rel err = %.3e\n", rel_err(Fattr, R.Fattr, W.n));
     printf("Fattr_1 = (%.6e, %.6e) (ref (%.6e, %.6e))\n",
-           Fattr[0], Fattr[1], R.Fattr[0], R.Fattr[1]);    free(Fattr);
+           Fattr[0], Fattr[1], R.Fattr[0], R.Fattr[1]);   
+    /* Step 3 (check): direct O(n^2) repulsion, small graphs only */
+    if (W.n <= 50000) {
+        double *Fdir = malloc(2 * W.n * sizeof(double));
+
+        t0 = now();
+        double Zdir = compute_rep_direct_seq(W.n, S.Y0, Fdir);
+        t1 = now();
+        printf("direct rep: %.3f s\n", t1 - t0);
+        printf("Z direct = %.2f (ref %.2f), rel err = %.3e\n",
+               Zdir, R.Z, fabs(Zdir - R.Z) / R.Z);
+        printf("Frep direct rel err = %.3e\n", rel_err(Fdir, R.Frep, W.n));
+        printf("Frep_1 = (%.6e, %.6e) (ref (%.6e, %.6e))\n",
+               Fdir[0], Fdir[1], R.Frep[0], R.Frep[1]);
+
+        free(Fdir);
+    } free(Fattr);
     free(beta);
     free(P);
     free_graph(&W);
