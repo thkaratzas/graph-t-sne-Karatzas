@@ -8,3 +8,4 @@ bin/
 results/*-omp.bin
 results/*-cilk.bin
 results/*-pthreads.bin
+config.mk

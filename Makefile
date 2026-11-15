@@ -1,7 +1,12 @@
 CC     = gcc
 CILKCC = clang
-CFLAGS = -O2 -Wall -Istarter -Isrc
-LIBS   = -lmatio -lm
+-include config.mk   # local compilers (not in git), e.g. on macOS
+
+MATIO_CFLAGS := $(shell pkg-config --cflags matio 2>/dev/null)
+MATIO_LIBS   := $(shell pkg-config --libs matio 2>/dev/null || echo -lmatio)
+
+CFLAGS = -O2 -Wall -Istarter -Isrc $(MATIO_CFLAGS)
+LIBS   = $(MATIO_LIBS) -lm
 
 COMMON = src/p_common.c src/io.c src/bh_common.c src/quadtree.c starter/data.c
 SEQ    = src/main_seq.c src/p_seq.c src/attr_seq.c src/rep_direct.c src/bh_seq.c src/grad_seq.c
@@ -36,3 +41,8 @@ bin/compare: src/compare.c
 
 clean:
 	rm -rf bin
+
+info:
+	@$(CC) --version | head -1
+	@$(CILKCC) --version | head -1
+	@echo "CFLAGS = $(CFLAGS)"

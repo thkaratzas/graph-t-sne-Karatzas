@@ -1,0 +1,19 @@
+== date
+Sun Nov 15 23:35:53 CET 2026
+== cpu
+Apple M1
+hw.perflevel0.physicalcpu: 4
+hw.perflevel1.physicalcpu: 4
+hw.l1dcachesize: 65536
+hw.perflevel0.l2cachesize: 12582912
+hw.perflevel1.l2cachesize: 4194304
+== memory (bytes)
+8589934592
+== os
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+== compilers and flags
+gcc-16 (Homebrew GCC 16.2.0) 16.2.0
+clang version 19.1.7 (https://github.com/OpenCilk/opencilk-project cd8ccfc1fd8293654dde7bf26657f08f89c7e54b)
+CFLAGS = -O2 -Wall -Istarter -Isrc -I/opt/homebrew/Cellar/libmatio/1.6.0/include -I/opt/homebrew/Cellar/hdf5/2.2.0/include
