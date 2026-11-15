@@ -117,6 +117,20 @@ int main(int argc, char **argv)
         double t_bh = t3 - t0;
     printf("Z bh = %.2f (ref %.2f), rel err = %.3e\n", Zbh, R.Z, fabs(Zbh - R.Z) / R.Z);
     printf("Frep bh rel err = %.3e\n", rel_err(Fbh, R.Frep, W.n));
+
+    /* Step 4: gradient */
+    double *G    = malloc(2 * W.n * sizeof(double));
+    double *Gref = malloc(2 * W.n * sizeof(double));
+
+    t0 = now();
+    compute_grad_seq(W.n, Fattr, Fbh, G);
+    t1 = now();
+    printf("grad: %.3f s\n", t1 - t0);
+
+    compute_grad_seq(W.n, R.Fattr, R.Frep, Gref);
+    printf("grad rel err = %.3e\n", rel_err(G, Gref, W.n));
+
+    save_results(argv[1], "seq", W.n, Zbh, beta, Fattr, Fbh, G);
     /* Step 3 (check): direct O(n^2) repulsion, small graphs only */
     if (W.n <= 50000) {
         double *Fdir = malloc(2 * W.n * sizeof(double));
@@ -139,6 +153,8 @@ int main(int argc, char **argv)
         free(Fdir);
     } free(Fattr);
         free(Fbh);
+            free(G);
+    free(Gref);
     tree_free(&T);
     free(beta);
     free(P);

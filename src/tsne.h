@@ -33,6 +33,13 @@ void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m);
 void tree_com_seq(tree_t *T, const double *Y);
 void tree_free(tree_t *T);
 double compute_rep_bh_seq(const tree_t *T, int64_t n, const double *Y, double theta, double *F);
+
+/* Step 4: gradient G[2n] = 4 (Fattr - Frep) */
+void compute_grad_seq(int64_t n, const double *Fattr, const double *Frep, double *G);
+
+/* results/<graph>-<version>.bin (io.c) */
+int save_results(const char *base, const char *version, int64_t n, double Z,
+                 const double *beta, const double *Fattr, const double *Frep, const double *G);
 /* helpers (p_common.c) */
 double row_beta(const double *w, int64_t d, double u, double *p, double *lr);
 int64_t find_entry(const graph_t *W, int64_t j, int64_t i);
