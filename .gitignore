@@ -1,2 +1,7 @@
 starter/readdata
 *.o
+test/hello
+test/cilk
+starter/readdata
+bin/
+*.o
