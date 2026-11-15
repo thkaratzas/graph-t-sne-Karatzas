@@ -32,7 +32,19 @@ static int check_graph(const graph_t *W)
     }
     return 0;
 }
-
+/* max_i |F_i - Fref_i| / max_i |Fref_i|, over both coordinates */
+static double rel_err(const double *F, const double *Fref, int64_t n)
+{
+    double emax = 0, fmax = 0;
+    for (int64_t k = 0; k < 2 * n; k++) {
+        double e = fabs(F[k] - Fref[k]);
+        if (e > emax)
+            emax = e;
+        if (fabs(Fref[k]) > fmax)
+            fmax = fabs(Fref[k]);
+    }
+    return emax / fmax;
+}
 int main(int argc, char **argv)
 {
     if (argc < 2) {
@@ -75,7 +87,17 @@ int main(int argc, char **argv)
     printf("max |beta - ref| = %.3e\n", err);
     printf("beta_1 = %.6f (ref %.6f)\n", beta[0], R.beta[0]);
     printf("sum P = %.12f (should be 1)\n", sum);
+    
+    /* Step 2: attraction */
+    double *Fattr = malloc(2 * W.n * sizeof(double));
 
+    t0 = now();
+    compute_attr_seq(&W, P, S.Y0, Fattr);
+    t1 = now();
+    printf("attr: %.3f s\n", t1 - t0);
+    printf("Fattr rel err = %.3e\n", rel_err(Fattr, R.Fattr, W.n));
+    printf("Fattr_1 = (%.6e, %.6e) (ref (%.6e, %.6e))\n",
+           Fattr[0], Fattr[1], R.Fattr[0], R.Fattr[1]);    free(Fattr);
     free(beta);
     free(P);
     free_graph(&W);

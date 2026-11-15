@@ -3,10 +3,11 @@ CFLAGS = -O2 -Wall -Istarter -Isrc
 LIBS   = -lmatio -lm
 
 COMMON = src/p_common.c starter/data.c
+SEQ    = src/main_seq.c src/p_seq.c src/attr_seq.c
 
-bin/seq: src/main_seq.c src/p_seq.c $(COMMON) src/tsne.h
+bin/seq: $(SEQ) $(COMMON) src/tsne.h
 	mkdir -p bin
-	$(CC) $(CFLAGS) -o $@ src/main_seq.c src/p_seq.c $(COMMON) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(SEQ) $(COMMON) $(LIBS)
 
 clean:
 	rm -rf bin
