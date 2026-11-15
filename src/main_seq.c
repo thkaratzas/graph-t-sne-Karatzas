@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#include "tsne.h"
+
+static double now(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return t.tv_sec + 1e-9 * t.tv_nsec;
+}
+
+/* sorted rows, symmetric pattern, positive weights */
+static int check_graph(const graph_t *W)
+{
+    for (int64_t i = 0; i < W->n; i++) {
+        for (int64_t k = W->colptr[i]; k < W->colptr[i + 1]; k++) {
+            if (k > W->colptr[i] && W->row[k] <= W->row[k - 1]) {
+                printf("row %ld not sorted\n", (long)i);
+                return 1;
+            }
+            if (W->val[k] <= 0) {
+                printf("nonpositive weight in row %ld\n", (long)i);
+                return 1;
+            }
+            if (find_entry(W, W->row[k], i) < 0) {
+                printf("not symmetric at (%ld, %ld)\n", (long)i, (long)W->row[k]);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int main(int argc, char **argv)
+{
+    if (argc < 2) {
+        printf("usage: %s data/<graph>\n", argv[0]);
+        return 1;
+    }
+
+    graph_t W;
+    state_t S;
+    ref_t   R;
+    if (read_graph(argv[1], &W) != 0 || read_state(argv[1], &S) != 0 || read_ref(argv[1], &R) != 0) {
+        printf("cannot read %s\n", argv[1]);
+        return 1;
+    }
+    printf("%s: n = %ld, nnz = %ld, max degree = %ld\n",
+           argv[1], (long)W.n, (long)W.nnz, (long)max_degree(&W));
+
+    if (check_graph(&W) != 0)
+        return 1;
+
+    double *beta = malloc(W.n * sizeof(double));
+    double *P    = malloc(W.nnz * sizeof(double));
+
+    double t0 = now();
+    compute_P_seq(&W, S.u, beta, P);
+    double t1 = now();
+    printf("P: %.3f s\n", t1 - t0);
+
+    /* checks */
+    double err = 0;
+    for (int64_t i = 0; i < W.n; i++) {
+        double e = fabs(beta[i] - R.beta[i]);
+        if (e > err)
+            err = e;
+    }
+    double sum = 0;
+    for (int64_t k = 0; k < W.nnz; k++)
+        sum += P[k];
+
+    printf("max |beta - ref| = %.3e\n", err);
+    printf("beta_1 = %.6f (ref %.6f)\n", beta[0], R.beta[0]);
+    printf("sum P = %.12f (should be 1)\n", sum);
+
+    free(beta);
+    free(P);
+    free_graph(&W);
+    return 0;
+}
