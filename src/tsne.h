@@ -67,6 +67,23 @@ void   tree_build_cilk(tree_t *T, int64_t n, const double *Y, int m);
 void   tree_com_cilk(tree_t *T, const double *Y);
 double compute_rep_bh_cilk(const tree_t *T, int64_t n, const double *Y, double theta, double *F);
 void   compute_grad_cilk(int64_t n, const double *Fattr, const double *Frep, double *G);
+
+/* Pthreads helper (pt_common.c) */
+typedef void (*pt_body_t)(int64_t lo, int64_t hi, int tid, void *arg);
+void        pt_init(void);
+int         pt_nthreads(void);
+const char *pt_schedule(void);
+int64_t     pt_get_chunk(void);
+void        pt_for(int64_t n, pt_body_t body, void *arg);
+
+/* Pthreads versions (*_pt.c), same arguments */
+void   compute_P_pt(const graph_t *W, double u, double *beta, double *P);
+void   compute_attr_pt(const graph_t *W, const double *P, const double *Y, double *F);
+double compute_rep_direct_pt(int64_t n, const double *Y, double *F);
+void   tree_build_pt(tree_t *T, int64_t n, const double *Y, int m);
+void   tree_com_pt(tree_t *T, const double *Y);
+double compute_rep_bh_pt(const tree_t *T, int64_t n, const double *Y, double theta, double *F);
+void   compute_grad_pt(int64_t n, const double *Fattr, const double *Frep, double *G);
 /* helpers (p_common.c) */
 double row_beta(const double *w, int64_t d, double u, double *p, double *lr);
 int64_t find_entry(const graph_t *W, int64_t j, int64_t i);
