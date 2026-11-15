@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     double t0 = now();
     compute_P_seq(&W, S.u, beta, P);
     double t1 = now();
-    printf("P: %.3f s\n", t1 - t0);
+    printf("P: %.6f s\n", t1 - t0);
 
     /* checks */
     double err = 0;
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
     t0 = now();
     compute_attr_seq(&W, P, S.Y0, Fattr);
     t1 = now();
-    printf("attr: %.3f s\n", t1 - t0);
+    printf("attr: %.6f s\n", t1 - t0);
     printf("Fattr rel err = %.3e\n", rel_err(Fattr, R.Fattr, W.n));
     printf("Fattr_1 = (%.6e, %.6e) (ref (%.6e, %.6e))\n",
            Fattr[0], Fattr[1], R.Fattr[0], R.Fattr[1]);   
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 
         printf("tree (m = %d): %ld cells, max depth %d\n", m, (long)T.ncells, T.maxdepth);
             tree_deep_report(&T);
-    printf("build: %.3f s, com: %.3f s, walk: %.3f s\n", t1 - t0, t2 - t1, t3 - t2);
+    printf("build: %.6f s, com: %.6f s, walk: %.6f s\n", t1 - t0, t2 - t1, t3 - t2);
         double t_bh = t3 - t0;
     printf("Z bh = %.2f (ref %.2f), rel err = %.3e\n", Zbh, R.Z, fabs(Zbh - R.Z) / R.Z);
     printf("Frep bh rel err = %.3e\n", rel_err(Fbh, R.Frep, W.n));
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     t0 = now();
     compute_grad_seq(W.n, Fattr, Fbh, G);
     t1 = now();
-    printf("grad: %.3f s\n", t1 - t0);
+    printf("grad: %.6f s\n", t1 - t0);
 
     compute_grad_seq(W.n, R.Fattr, R.Frep, Gref);
     printf("grad rel err = %.3e\n", rel_err(G, Gref, W.n));
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
         t0 = now();
         double Zdir = compute_rep_direct_seq(W.n, S.Y0, Fdir);
         t1 = now();
-        printf("direct rep: %.3f s\n", t1 - t0);
+        printf("direct rep: %.6f s\n", t1 - t0);
                 double t_dir = t1 - t0;
         printf("Z direct = %.2f (ref %.2f), rel err = %.3e\n",
                Zdir, R.Z, fabs(Zdir - R.Z) / R.Z);
