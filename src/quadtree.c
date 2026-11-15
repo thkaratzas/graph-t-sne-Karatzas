@@ -26,12 +26,39 @@ static cell_t *new_cell(double cx, double cy, double h, int64_t start, int64_t c
     return c;
 }
 
-/* Split cell c into its quadrants, recursively.
-   tmp is a work buffer of size n. */
-static void build(cell_t *c, int64_t *perm, int64_t *tmp, const double *Y, int m, int depth)
+/* ---------- shared pieces (all versions) ---------- */
+
+/* Bounding square, identity perm, root cell.
+   Returns a work buffer of size n; the caller frees it. */
+int64_t *tree_init(tree_t *T, int64_t n, const double *Y, int m)
+{
+    double xmin = Y[0], xmax = Y[0], ymin = Y[1], ymax = Y[1];
+    for (int64_t i = 1; i < n; i++) {
+        double x = Y[2 * i], y = Y[2 * i + 1];
+        if (x < xmin) xmin = x;
+        if (x > xmax) xmax = x;
+        if (y < ymin) ymin = y;
+        if (y > ymax) ymax = y;
+    }
+    double cx = (xmin + xmax) / 2;
+    double cy = (ymin + ymax) / 2;
+    double h  = (xmax - xmin > ymax - ymin ? xmax - xmin : ymax - ymin) / 2;
+
+    T->m = m;
+    T->perm = malloc(n * sizeof(int64_t));
+    for (int64_t i = 0; i < n; i++)
+        T->perm[i] = i;
+
+    T->root = new_cell(cx, cy, h, 0, n);
+    return malloc(n * sizeof(int64_t));
+}
+
+/* Split cell c into its quadrants (one level, no recursion).
+   Returns 0 if c stays a leaf, 1 if it got children. */
+int tree_split(cell_t *c, int64_t *perm, int64_t *tmp, const double *Y, int m, int depth)
 {
     if (c->count <= m || depth >= MAX_DEPTH)
-        return;                 /* stays a leaf */
+        return 0;
     c->leaf = 0;
 
     int64_t *p = &perm[c->start];
@@ -65,8 +92,8 @@ static void build(cell_t *c, int64_t *perm, int64_t *tmp, const double *Y, int m
         double cx = c->cx + ((q & 1) ? h2 : -h2);
         double cy = c->cy + ((q & 2) ? h2 : -h2);
         c->child[q] = new_cell(cx, cy, h2, c->start + off[q], cnt[q]);
-        build(c->child[q], perm, tmp, Y, m, depth + 1);
     }
+    return 1;
 }
 
 static int64_t count_cells(const cell_t *c)
@@ -77,7 +104,6 @@ static int64_t count_cells(const cell_t *c)
             k += count_cells(c->child[q]);
     return k;
 }
-
 
 /* depth of the deepest leaf below c (c itself at depth 0) */
 static int max_depth(const cell_t *c)
@@ -93,6 +119,69 @@ static int max_depth(const cell_t *c)
     return d;
 }
 
+void tree_finish(tree_t *T)
+{
+    T->ncells = count_cells(T->root);
+    T->maxdepth = max_depth(T->root);
+}
+
+/* Center of mass of one cell: from its points (leaf)
+   or from its children, which must be done already. */
+void tree_com_cell(cell_t *c, const int64_t *perm, const double *Y)
+{
+    double sx = 0, sy = 0;
+    if (c->leaf) {
+        for (int64_t k = c->start; k < c->start + c->count; k++) {
+            sx += Y[2 * perm[k]];
+            sy += Y[2 * perm[k] + 1];
+        }
+    } else {
+        for (int q = 0; q < 4; q++) {
+            cell_t *ch = c->child[q];
+            if (ch == NULL)
+                continue;
+            sx += ch->count * ch->mx;
+            sy += ch->count * ch->my;
+        }
+    }
+    c->mx = sx / c->count;
+    c->my = sy / c->count;
+}
+
+/* ---------- sequential version ---------- */
+
+static void build(cell_t *c, int64_t *perm, int64_t *tmp, const double *Y, int m, int depth)
+{
+    if (!tree_split(c, perm, tmp, Y, m, depth))
+        return;
+    for (int q = 0; q < 4; q++)
+        if (c->child[q])
+            build(c->child[q], perm, tmp, Y, m, depth + 1);
+}
+
+void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m)
+{
+    int64_t *tmp = tree_init(T, n, Y, m);
+    build(T->root, T->perm, tmp, Y, m, 0);
+    free(tmp);
+    tree_finish(T);
+}
+
+static void com(cell_t *c, const int64_t *perm, const double *Y)
+{
+    if (!c->leaf)
+        for (int q = 0; q < 4; q++)
+            if (c->child[q])
+                com(c->child[q], perm, Y);
+    tree_com_cell(c, perm, Y);
+}
+
+void tree_com_seq(tree_t *T, const double *Y)
+{
+    com(T->root, T->perm, Y);
+}
+
+/* ---------- diagnostics and cleanup ---------- */
 
 /* Leaves at the depth limit: they hold points that could not be separated. */
 static void deep_leaves(const cell_t *c, int depth,
@@ -118,63 +207,6 @@ void tree_deep_report(const tree_t *T)
     deep_leaves(T->root, 0, &nleaves, &npoints, &maxcount);
     printf("leaves at depth %d: %ld, points in them: %ld, largest: %ld\n",
            MAX_DEPTH, (long)nleaves, (long)npoints, (long)maxcount);
-}
-
-void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m)
-{
-    /* bounding box */
-    double xmin = Y[0], xmax = Y[0], ymin = Y[1], ymax = Y[1];
-    for (int64_t i = 1; i < n; i++) {
-        double x = Y[2 * i], y = Y[2 * i + 1];
-        if (x < xmin) xmin = x;
-        if (x > xmax) xmax = x;
-        if (y < ymin) ymin = y;
-        if (y > ymax) ymax = y;
-    }
-    double cx = (xmin + xmax) / 2;
-    double cy = (ymin + ymax) / 2;
-    double h  = (xmax - xmin > ymax - ymin ? xmax - xmin : ymax - ymin) / 2;
-
-    T->m = m;
-    T->perm = malloc(n * sizeof(int64_t));
-    for (int64_t i = 0; i < n; i++)
-        T->perm[i] = i;
-
-    int64_t *tmp = malloc(n * sizeof(int64_t));
-    T->root = new_cell(cx, cy, h, 0, n);
-    build(T->root, T->perm, tmp, Y, m, 0);
-    free(tmp);
-
-    T->ncells = count_cells(T->root);
-        T->maxdepth = max_depth(T->root);
-}
-
-/* centers of mass, bottom-up */
-static void com(cell_t *c, const int64_t *perm, const double *Y)
-{
-    double sx = 0, sy = 0;
-    if (c->leaf) {
-        for (int64_t k = c->start; k < c->start + c->count; k++) {
-            sx += Y[2 * perm[k]];
-            sy += Y[2 * perm[k] + 1];
-        }
-    } else {
-        for (int q = 0; q < 4; q++) {
-            cell_t *ch = c->child[q];
-            if (ch == NULL)
-                continue;
-            com(ch, perm, Y);
-            sx += ch->count * ch->mx;
-            sy += ch->count * ch->my;
-        }
-    }
-    c->mx = sx / c->count;
-    c->my = sy / c->count;
-}
-
-void tree_com_seq(tree_t *T, const double *Y)
-{
-    com(T->root, T->perm, Y);
 }
 
 static void free_cell(cell_t *c)
