@@ -1,0 +1,148 @@
+#include <stdlib.h>
+#include "tsne.h"
+
+#define MAX_DEPTH 50   /* guard against many identical points */
+
+/* 0: left-bottom, 1: right-bottom, 2: left-top, 3: right-top */
+static int quadrant(const cell_t *c, double x, double y)
+{
+    return (x >= c->cx) + 2 * (y >= c->cy);
+}
+
+static cell_t *new_cell(double cx, double cy, double h, int64_t start, int64_t count)
+{
+    cell_t *c = malloc(sizeof(cell_t));
+    c->cx = cx;
+    c->cy = cy;
+    c->h  = h;
+    c->start = start;
+    c->count = count;
+    c->mx = 0;
+    c->my = 0;
+    c->leaf = 1;
+    for (int q = 0; q < 4; q++)
+        c->child[q] = NULL;
+    return c;
+}
+
+/* Split cell c into its quadrants, recursively.
+   tmp is a work buffer of size n. */
+static void build(cell_t *c, int64_t *perm, int64_t *tmp, const double *Y, int m, int depth)
+{
+    if (c->count <= m || depth >= MAX_DEPTH)
+        return;                 /* stays a leaf */
+    c->leaf = 0;
+
+    int64_t *p = &perm[c->start];
+    int64_t *t = &tmp[c->start];
+
+    /* count points per quadrant */
+    int64_t cnt[4] = {0, 0, 0, 0};
+    for (int64_t k = 0; k < c->count; k++)
+        cnt[quadrant(c, Y[2 * p[k]], Y[2 * p[k] + 1])]++;
+
+    /* where each quadrant starts */
+    int64_t off[4];
+    off[0] = 0;
+    for (int q = 1; q < 4; q++)
+        off[q] = off[q - 1] + cnt[q - 1];
+
+    /* group the points by quadrant: into tmp, then back */
+    int64_t pos[4] = {off[0], off[1], off[2], off[3]};
+    for (int64_t k = 0; k < c->count; k++) {
+        int q = quadrant(c, Y[2 * p[k]], Y[2 * p[k] + 1]);
+        t[pos[q]++] = p[k];
+    }
+    for (int64_t k = 0; k < c->count; k++)
+        p[k] = t[k];
+
+    /* children */
+    double h2 = c->h / 2;
+    for (int q = 0; q < 4; q++) {
+        if (cnt[q] == 0)
+            continue;
+        double cx = c->cx + ((q & 1) ? h2 : -h2);
+        double cy = c->cy + ((q & 2) ? h2 : -h2);
+        c->child[q] = new_cell(cx, cy, h2, c->start + off[q], cnt[q]);
+        build(c->child[q], perm, tmp, Y, m, depth + 1);
+    }
+}
+
+static int64_t count_cells(const cell_t *c)
+{
+    int64_t k = 1;
+    for (int q = 0; q < 4; q++)
+        if (c->child[q])
+            k += count_cells(c->child[q]);
+    return k;
+}
+
+void tree_build_seq(tree_t *T, int64_t n, const double *Y, int m)
+{
+    /* bounding box */
+    double xmin = Y[0], xmax = Y[0], ymin = Y[1], ymax = Y[1];
+    for (int64_t i = 1; i < n; i++) {
+        double x = Y[2 * i], y = Y[2 * i + 1];
+        if (x < xmin) xmin = x;
+        if (x > xmax) xmax = x;
+        if (y < ymin) ymin = y;
+        if (y > ymax) ymax = y;
+    }
+    double cx = (xmin + xmax) / 2;
+    double cy = (ymin + ymax) / 2;
+    double h  = (xmax - xmin > ymax - ymin ? xmax - xmin : ymax - ymin) / 2;
+
+    T->m = m;
+    T->perm = malloc(n * sizeof(int64_t));
+    for (int64_t i = 0; i < n; i++)
+        T->perm[i] = i;
+
+    int64_t *tmp = malloc(n * sizeof(int64_t));
+    T->root = new_cell(cx, cy, h, 0, n);
+    build(T->root, T->perm, tmp, Y, m, 0);
+    free(tmp);
+
+    T->ncells = count_cells(T->root);
+}
+
+/* centers of mass, bottom-up */
+static void com(cell_t *c, const int64_t *perm, const double *Y)
+{
+    double sx = 0, sy = 0;
+    if (c->leaf) {
+        for (int64_t k = c->start; k < c->start + c->count; k++) {
+            sx += Y[2 * perm[k]];
+            sy += Y[2 * perm[k] + 1];
+        }
+    } else {
+        for (int q = 0; q < 4; q++) {
+            cell_t *ch = c->child[q];
+            if (ch == NULL)
+                continue;
+            com(ch, perm, Y);
+            sx += ch->count * ch->mx;
+            sy += ch->count * ch->my;
+        }
+    }
+    c->mx = sx / c->count;
+    c->my = sy / c->count;
+}
+
+void tree_com_seq(tree_t *T, const double *Y)
+{
+    com(T->root, T->perm, Y);
+}
+
+static void free_cell(cell_t *c)
+{
+    for (int q = 0; q < 4; q++)
+        if (c->child[q])
+            free_cell(c->child[q]);
+    free(c);
+}
+
+void tree_free(tree_t *T)
+{
+    free_cell(T->root);
+    free(T->perm);
+}

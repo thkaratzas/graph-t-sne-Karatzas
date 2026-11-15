@@ -47,10 +47,11 @@ static double rel_err(const double *F, const double *Fref, int64_t n)
 }
 int main(int argc, char **argv)
 {
-    if (argc < 2) {
-        printf("usage: %s data/<graph>\n", argv[0]);
+       if (argc < 2) {
+        printf("usage: %s data/<graph> [m]\n", argv[0]);
         return 1;
     }
+    int m = (argc > 2) ? atoi(argv[2]) : 8;   /* leaf capacity */
 
     graph_t W;
     state_t S;
@@ -98,6 +99,24 @@ int main(int argc, char **argv)
     printf("Fattr rel err = %.3e\n", rel_err(Fattr, R.Fattr, W.n));
     printf("Fattr_1 = (%.6e, %.6e) (ref (%.6e, %.6e))\n",
            Fattr[0], Fattr[1], R.Fattr[0], R.Fattr[1]);   
+
+    /* Step 3: Barnes-Hut repulsion */
+    double *Fbh = malloc(2 * W.n * sizeof(double));
+    tree_t T;
+
+    t0 = now();
+    tree_build_seq(&T, W.n, S.Y0, m);
+    t1 = now();
+    tree_com_seq(&T, S.Y0);
+    double t2 = now();
+    double Zbh = compute_rep_bh_seq(&T, W.n, S.Y0, S.theta, Fbh);
+    double t3 = now();
+
+    printf("tree (m = %d): %ld cells\n", m, (long)T.ncells);
+    printf("build: %.3f s, com: %.3f s, walk: %.3f s\n", t1 - t0, t2 - t1, t3 - t2);
+        double t_bh = t3 - t0;
+    printf("Z bh = %.2f (ref %.2f), rel err = %.3e\n", Zbh, R.Z, fabs(Zbh - R.Z) / R.Z);
+    printf("Frep bh rel err = %.3e\n", rel_err(Fbh, R.Frep, W.n));
     /* Step 3 (check): direct O(n^2) repulsion, small graphs only */
     if (W.n <= 50000) {
         double *Fdir = malloc(2 * W.n * sizeof(double));
@@ -106,14 +125,21 @@ int main(int argc, char **argv)
         double Zdir = compute_rep_direct_seq(W.n, S.Y0, Fdir);
         t1 = now();
         printf("direct rep: %.3f s\n", t1 - t0);
+                double t_dir = t1 - t0;
         printf("Z direct = %.2f (ref %.2f), rel err = %.3e\n",
                Zdir, R.Z, fabs(Zdir - R.Z) / R.Z);
         printf("Frep direct rel err = %.3e\n", rel_err(Fdir, R.Frep, W.n));
         printf("Frep_1 = (%.6e, %.6e) (ref (%.6e, %.6e))\n",
                Fdir[0], Fdir[1], R.Frep[0], R.Frep[1]);
+         printf("BH vs direct: Z rel err = %.3e, Frep rel err = %.3e\n",
+               fabs(Zbh - Zdir) / Zdir, rel_err(Fbh, Fdir, W.n));
+                       printf("BH speedup over direct: %.1fx\n", t_dir / t_bh);
+        
 
         free(Fdir);
     } free(Fattr);
+        free(Fbh);
+    tree_free(&T);
     free(beta);
     free(P);
     free_graph(&W);
