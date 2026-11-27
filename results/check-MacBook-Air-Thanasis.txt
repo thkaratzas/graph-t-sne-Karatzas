@@ -1,4 +1,6 @@
 ===== k49_norm_10NN
+max |beta - ref| = 1.221e-04
+beta_1 = 2.628174 (ref 2.628174)
 Fattr rel err = 1.288e-05
 tree (m = 16): 7485 cells, max depth 9
 leaves at depth 50: 0, points in them: 0, largest: 0
@@ -9,11 +11,11 @@ Z direct = 74131996.99 (ref 74125562.42), rel err = 8.681e-05
 Frep direct rel err = 1.177e-04
 BH vs direct: Z rel err = 5.162e-03, Frep rel err = 8.158e-03
 results/k49_norm_10NN-omp.bin vs results/k49_norm_10NN-seq.bin (n = 38547)
-  Z     1.616e-15
+  Z     1.818e-15
   beta  0.000e+00
   Fattr 0.000e+00
-  Frep  1.719e-15
-  grad  1.555e-15
+  Frep  1.841e-15
+  grad  1.777e-15
 results/k49_norm_10NN-cilk.bin vs results/k49_norm_10NN-seq.bin (n = 38547)
   Z     4.647e-15
   beta  0.000e+00
@@ -27,6 +29,8 @@ results/k49_norm_10NN-pthreads.bin vs results/k49_norm_10NN-seq.bin (n = 38547)
   Frep  3.683e-15
   grad  3.332e-15
 ===== com-Amazon
+max |beta - ref| = 0.000e+00
+beta_1 = 0.000000 (ref 0.000000)
 Fattr rel err = 1.935e-15
 tree (m = 16): 63626 cells, max depth 50
 leaves at depth 50: 11, points in them: 276, largest: 50
@@ -34,17 +38,17 @@ Z bh = 7455340607.40 (ref 7491529170.86), rel err = 4.831e-03
 Frep bh rel err = 8.128e-03
 grad rel err = 2.965e-03
 results/com-Amazon-omp.bin vs results/com-Amazon-seq.bin (n = 334863)
-  Z     1.804e-14
+  Z     1.855e-14
   beta  0.000e+00
   Fattr 0.000e+00
-  Frep  1.802e-14
-  grad  6.630e-15
+  Frep  1.860e-14
+  grad  6.788e-15
 results/com-Amazon-cilk.bin vs results/com-Amazon-seq.bin (n = 334863)
-  Z     2.239e-14
+  Z     2.175e-14
   beta  0.000e+00
   Fattr 0.000e+00
-  Frep  2.249e-14
-  grad  8.208e-15
+  Frep  2.177e-14
+  grad  7.945e-15
 results/com-Amazon-pthreads.bin vs results/com-Amazon-seq.bin (n = 334863)
   Z     1.970e-14
   beta  0.000e+00
@@ -52,6 +56,8 @@ results/com-Amazon-pthreads.bin vs results/com-Amazon-seq.bin (n = 334863)
   Frep  1.976e-14
   grad  7.208e-15
 ===== coPapersDBLP
+max |beta - ref| = 0.000e+00
+beta_1 = 0.000000 (ref 0.000000)
 Fattr rel err = 3.923e-15
 tree (m = 16): 171223 cells, max depth 50
 leaves at depth 50: 1583, points in them: 38605, largest: 114
@@ -65,14 +71,14 @@ results/coPapersDBLP-omp.bin vs results/coPapersDBLP-seq.bin (n = 540486)
   Frep  4.210e-14
   grad  1.680e-14
 results/coPapersDBLP-cilk.bin vs results/coPapersDBLP-seq.bin (n = 540486)
-  Z     2.900e-14
+  Z     3.145e-14
   beta  0.000e+00
   Fattr 0.000e+00
-  Frep  2.900e-14
-  grad  1.160e-14
+  Frep  3.144e-14
+  grad  1.249e-14
 results/coPapersDBLP-pthreads.bin vs results/coPapersDBLP-seq.bin (n = 540486)
-  Z     4.472e-14
+  Z     4.431e-14
   beta  0.000e+00
   Fattr 0.000e+00
-  Frep  4.472e-14
-  grad  1.784e-14
+  Frep  4.435e-14
+  grad  1.769e-14
